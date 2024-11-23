@@ -8,7 +8,8 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
-using System.Text.Json
+using Newton.Soft.Json;
+using System.Text.Json;
 using HospitalManagementSystem;
 using static HospitalManagementSystem.Patient;
 
@@ -23,18 +24,28 @@ namespace HospitalManagementSystem
 
             while (running)
             {
-                Console.WriteLine("\nMenu: ");
+                Console.Clear();
+                Console.WriteLine(new string('=', 50));
+                Console.WriteLine("   WELCOME TO THE HOSPITAL MANAGEMENT SYSTEM   ");
+                Console.WriteLine(new string('=', 50));
+                Console.WriteLine(new string('-', 50));
+                Console.WriteLine("MAIN MENU");
+                Console.WriteLine(new string('-', 50));
                 Console.WriteLine("1. Add Patient");
                 Console.WriteLine("2. View or Update Patient Record");
                 Console.WriteLine("3. Search Patient");
-                Console.WriteLine("4. Schedule Appointments");
+                Console.WriteLine("4. Manage Appointments");
                 Console.WriteLine("5. Exit");
-                Console.WriteLine("Select an option: ");
+                Console.WriteLine(new string('-', 50));
                 string choice = Console.ReadLine();
 
                 switch (choice)
                 {
                     case "1":
+                        Console.Clear();
+                        Console.WriteLine(new string('-', 50));
+                        Console.WriteLine("ADD PATIENT");
+                        Console.WriteLine(new string('-', 50));
                         var patientService = new PatientService();
 
                         Console.Write("Enter First Name: ");
@@ -64,8 +75,7 @@ namespace HospitalManagementSystem
                         break;
 
                     case "2":
-                        PatientManager.ListAllPatients();
-
+                        
                         while (true)
                         {
                             Console.WriteLine("\nSelect an option:");
@@ -83,10 +93,18 @@ namespace HospitalManagementSystem
                             switch (subChoice)
                             {
                                 case "1":
+                                    Console.Clear();
+                                    Console.WriteLine(new string('-', 50));
+                                    Console.WriteLine("VIEW OR UPDATE PATIENT RECORD");
+                                    Console.WriteLine(new string('-', 50));
                                     PatientManager.ListAllPatients();
                                     break;
 
                                 case "2":
+                                    Console.Clear();
+                                    Console.WriteLine(new string('-', 50));
+                                    Console.WriteLine("SEARCH PATIENT");
+                                    Console.WriteLine(new string('-', 50));
                                     Console.WriteLine("\nSearch from the following: ");
                                     Console.WriteLine("1. Full Name and Date of Birth");
                                     Console.WriteLine("2. NHS Number");
@@ -229,28 +247,23 @@ namespace HospitalManagementSystem
                                     var nhsForNote = PromptForNHSNumber();
                                     Console.Write("Enter Note Content: ");
                                     string content = Console.ReadLine();
-                                    try
+
+                                    var newNote = new Notes
                                     {
-                                        var note = new Notes
-                                        {
-                                            DateCreated = DateTime.Now,
-                                            Content = content
-                                        };
-                                        PatientManager.AddNote(nhsForNote, note);
-                                        Console.WriteLine("Note added successfully.");
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Console.WriteLine($"Error adding note: {ex.Message}");
-                                    }
+                                        DateCreated = DateTime.Now,
+                                        Content = content
+                                    };
+
+                                    var PatientService = new PatientService();
+                                    PatientService.AddNoteToPatient(nhsForNote, newNote);
                                     break;
 
                                 case "7":
                                     var nhsForViewNotes = PromptForNHSNumber();
-                                    var notesList = PatientManager.GetNotes(nhsForViewNotes);
+                                    var notesList = PatientService.GetNotesForPatient(nhsForViewNotes);
                                     if (notesList.Any())
                                     {
-                                        Console.WriteLine("Patient Notes:");
+                                        Console.WriteLine("\nPatient Notes:");
                                         foreach (var note in notesList)
                                         {
                                             Console.WriteLine($"Date: {note.DateCreated}");
@@ -260,7 +273,7 @@ namespace HospitalManagementSystem
                                     }
                                     else
                                     {
-                                        Console.WriteLine("No notes found for this patient.");
+                                        Console.WriteLine("\nNo notes found for this patient.");
                                     }
                                     break;
 
@@ -351,7 +364,9 @@ namespace HospitalManagementSystem
 
                     case "4":
                         Console.Clear();
-                        Console.WriteLine("Appointment Scheduling System");
+                        Console.WriteLine(new string('-', 50));
+                        Console.WriteLine("MANAGE APPOINTMENTS");
+                        Console.WriteLine(new string('-', 50));
                         Console.WriteLine("1. Add Doctor");
                         Console.WriteLine("2. Add Patient");
                         Console.WriteLine("3. Schedule Appointment");

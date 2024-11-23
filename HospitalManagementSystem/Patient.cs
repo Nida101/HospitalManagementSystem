@@ -9,7 +9,8 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Security.AccessControl;
 using System.Text;
-using System.Text.Json
+using System.Text.Json;
+using Newton.Soft.Json;
 using System.Threading.Tasks;
 using static HospitalManagementSystem.Patient;
 
@@ -25,6 +26,7 @@ namespace HospitalManagementSystem
         public string NHSNumber { get; set; }
         public string HospitalNumber { get; set; }
         public int PatientID { get; set; }
+        public List<Notes> Note { get; set; } = new List<Notes>();
 
         public static List<Patient> PatientList = new List<Patient>();
 
@@ -64,6 +66,7 @@ namespace HospitalManagementSystem
         public static class PatientManager
         {
             private static List<Patient> patients = new List<Patient>();
+            private static readonly PatientService patientService = new PatientService();
 
             // Method to add a new patient
             public static void AddPatient(Patient patient)
@@ -75,34 +78,41 @@ namespace HospitalManagementSystem
             // Method to view all patients
             public static void ListAllPatients()
             {
+                var patients = patientService.LoadPatients();
+
                 if (patients.Count == 0)
                 {
                     Console.WriteLine("No patients found.");
                     return;
                 }
-                Console.WriteLine("Patient List: ");
+
                 foreach (var patient in patients)
                 {
-                    patient.ViewPatient();
+                    Console.WriteLine($"Name: {patient.FirstName} {patient.LastName}");
+                    Console.WriteLine($"Date of Birth: {patient.DateOfBirth:yyyy-MM-dd}");
+                    Console.WriteLine($"NHS Number: {patient.NHSNumber}");
+                    Console.WriteLine($"Hospital Number: {patient.HospitalNumber}");
+                    Console.WriteLine(new string('-', 30));
                 }
             }
+        
 
 
             public static List<Patient> SearchPatientByDobAndName(DateTime dateOfBirth, string fullName)
             {
-                return patients
-                    .Where(p => p.DateOfBirth.Date == dateOfBirth.Date &&
-                                $"{p.FirstName} {p.LastName}".Equals(fullName, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
+                var patients = patientService.LoadPatients();
+                return patients.Where(p => p.DateOfBirth == dateOfBirth && $"{p.FirstName} {p.LastName}".Equals(fullName, StringComparison.OrdinalIgnoreCase)).ToList();
             }
 
             public static Patient SearchPatientByHospitalNumber(string hospitalNumber) //Method to search patient by Hospital Number
             {
+                var patients = patientService.LoadPatients();
                 return patients.FirstOrDefault(p => p.HospitalNumber.Equals(hospitalNumber, StringComparison.OrdinalIgnoreCase));
             }
 
             public static Patient SearchPatientByNHSNumber(string nhsNumber) //Method to search patient by NHS Number
             {
+                var patients = patientService.LoadPatients();
                 return patients.FirstOrDefault(p => p.NHSNumber.Equals(nhsNumber, StringComparison.OrdinalIgnoreCase));
             }
 
@@ -186,27 +196,37 @@ namespace HospitalManagementSystem
 
             public static void AddNote(string nhsNumber, Notes note)
             {
-                var patient = SearchPatientByNHSNumber(nhsNumber);
-                if (patient != null)
+                var patient = patients.FirstOrDefault(p => p.NHSNumber == nhsNumber);
+
+                if (patient == null)
                 {
-                    patient.Note.Add(note);
+                    throw new ArgumentException("Patient not found.");
                 }
+
+                patient.Note.Add(note);
+                Console.WriteLine("Note added successfully.");
             }
 
             public static List<Notes> GetNotes(string nhsNumber)
             {
-                var patient = SearchPatientByNHSNumber(nhsNumber);
+                // Find the patient by NHS Number
+                var patient = patients.FirstOrDefault(p => p.NHSNumber.Equals(nhsNumber, StringComparison.OrdinalIgnoreCase));
+
                 if (patient != null)
                 {
-                    return patient.Note.OrderByDescending(note => note.DateCreated).ToList();
+                    return patient.Note;
                 }
-                return new List<Notes>();
-            }            
+
+                Console.WriteLine("Patient not found.");
+                return new List<Notes>(); // Return an empty list if the patient is not found
+            }
         }
 
         public class PatientService
         {
             private readonly Dictionary<string, int> dailyPatientCount = new Dictionary<string, int>(); //2.1 
+
+            var patients = Patient.PatientService.LoadPatient(); 
 
             public Patient CreatePatient(string firstName, string lastName, DateTime dateOfBirth, string contactDetails, string nhsNumber, string hospitalNumber)
             {
@@ -219,12 +239,23 @@ namespace HospitalManagementSystem
                     hospitalNumber = GenerateHospitalNumber();
                 }
 
+                {
+                    var newPatient = new Patient
+                    {
+                        FirstName = firstName,
+                        LastName = lastName,
+                        DateOfBirth = dateOfBirth,
+                        ContactDetails = contactDetails,
+                        NHSNumber = nhsNumber,
+                        HospitalNumber = hospitalNumber
+                    };
 
-                var patient = new Patient(firstName, lastName, dateOfBirth, contactDetails, nhsNumber, hospitalNumber);
+                    patients.Add(newPatient);
+                    SavePatients(patients);
 
-                return patient;
+                    return newPatient;
+                }
             }
-
 
             public string GenerateHospitalNumber()
             {
@@ -241,6 +272,91 @@ namespace HospitalManagementSystem
 
                 string sequenceNumber = dailyPatientCount[today].ToString("D2");
                 return ($"PRS-{today}-{sequenceNumber}");
+            }
+
+            // JSON for 2.1 - storing the patient record
+            private const string FilePath = "patients.json";
+
+            // Load existing patients from JSON
+            public List<Patient> LoadPatients()
+            {
+                if (!File.Exists(FilePath))
+                {
+                    // If the file doesn't exist, create it and return an empty list
+                    File.WriteAllText(FilePath, "[]");
+                    return new List<Patient>();
+                }
+
+                string jsonData = File.ReadAllText(FilePath);
+                return JsonSerializer.Deserialize<List<Patient>>(jsonData) ?? new List<Patient>();
+            }
+
+            // Save patients to JSON
+            public void SavePatients(List<Patient> patients)
+            {
+                string jsonData = JsonSerializer.Serialize(patients, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(FilePath, jsonData);
+            }
+
+            // Create a new patient record
+            public Patient JSONCreatePatient(string firstName, string lastName, DateTime dateOfBirth, string contactDetails, string nhsNumber, string hospitalNumber)
+            {
+                var patients = LoadPatients();
+
+                var newPatient = new Patient
+                {
+                    FirstName = firstName,
+                    LastName = lastName,
+                    DateOfBirth = dateOfBirth,
+                    ContactDetails = contactDetails,
+                    NHSNumber = nhsNumber,
+                    HospitalNumber = hospitalNumber
+                };
+
+                patients.Add(newPatient);
+                SavePatients(patients);
+
+                return newPatient;
+            }
+
+            private const string FileNamePath = "patients.json";
+
+            public static List<Patient> LoadPatient()
+            {
+                if (!System.IO.File.Exists(FilePath))
+                {
+                    System.IO.File.WriteAllText(FilePath, "[]");
+                }
+
+                string json = System.IO.File.ReadAllText(FilePath);
+                return JsonSerializer.Deserialize<List<Patient>>(json) ?? new List<Patient>();
+            }
+
+            public static void SavePatient(List<Patient> patients)
+            {
+                string json = JsonSerializer.Serialize(patients, new JsonSerializerOptions { WriteIndented = true });
+                System.IO.File.WriteAllText(FilePath, json);
+            }
+
+            public void AddNoteToPatient(string nhsNumber, Notes newNote)
+            {
+                // Load existing patients
+                var patients = LoadPatients();
+
+                // Find the patient by NHS Number
+                var patient = patients.FirstOrDefault(p => p.NHSNumber == nhsNumber);
+                if (patient == null)
+                {
+                    throw new ArgumentException("Patient not found.");
+                }
+
+                // Add the note to the patient's notes list
+                patient.Note.Add(newNote);
+
+                // Save the updated patients list back to the file
+                SavePatients(patients);
+
+                Console.WriteLine("Note added successfully.");
             }
 
 
@@ -274,8 +390,7 @@ namespace HospitalManagementSystem
             public DateTime DateCreated { get; set; }
             public string Content { get; set; }
         }
-        public List<Notes> Note { get; set; } = new List<Notes>();
-
+        public List<Notes> note { get; set; } = new List<Notes>();        
 
         // Input for 2.3 
         public static string PromptForNHSNumber()
