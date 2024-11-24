@@ -8,7 +8,6 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
-using Newton.Soft.Json;
 using System.Text.Json;
 using HospitalManagementSystem;
 using static HospitalManagementSystem.Patient;
@@ -256,24 +255,29 @@ namespace HospitalManagementSystem
 
                                     var PatientService = new PatientService();
                                     PatientService.AddNoteToPatient(nhsForNote, newNote);
+                                    PatientService.AddNoteToPatient(nhsForNote, newNote);
+                                    Console.WriteLine("Note added successfully.");
                                     break;
 
                                 case "7":
-                                    var nhsForViewNotes = PromptForNHSNumber();
-                                    var notesList = PatientService.GetNotesForPatient(nhsForViewNotes);
-                                    if (notesList.Any())
+                                    var note = new Notes
                                     {
-                                        Console.WriteLine("\nPatient Notes:");
-                                        foreach (var note in notesList)
+                                        DateCreated = DateTime.Now
+                                    };
+                                    Console.WriteLine($"Date: {note.DateCreated}");
+
+                                    var nhsForViewNotes = PromptForNHSNumber();
+                                    var notesList = PatientManager.GetPatientNotes(nhsForViewNotes);
+                                    if (notesList != null && notesList.Any())
+                                    {
+                                        foreach (var Note in notesList)
                                         {
-                                            Console.WriteLine($"Date: {note.DateCreated}");
-                                            Console.WriteLine($"Content: {note.Content}");
-                                            Console.WriteLine(new string('-', 30));
+                                            Console.WriteLine($"Date: {note.DateCreated}, Content: {note.Content}");
                                         }
                                     }
                                     else
                                     {
-                                        Console.WriteLine("\nNo notes found for this patient.");
+                                        Console.WriteLine("No notes found or patient does not exist.");
                                     }
                                     break;
 

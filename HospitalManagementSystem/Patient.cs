@@ -10,7 +10,6 @@ using System.Reflection.Metadata;
 using System.Security.AccessControl;
 using System.Text;
 using System.Text.Json;
-using Newton.Soft.Json;
 using System.Threading.Tasks;
 using static HospitalManagementSystem.Patient;
 
@@ -67,13 +66,6 @@ namespace HospitalManagementSystem
         {
             private static List<Patient> patients = new List<Patient>();
             private static readonly PatientService patientService = new PatientService();
-
-            // Method to add a new patient
-            public static void AddPatient(Patient patient)
-            {
-                patients.Add(patient);
-                Console.WriteLine("Patient added successfully.");
-            }
 
             // Method to view all patients
             public static void ListAllPatients()
@@ -207,26 +199,26 @@ namespace HospitalManagementSystem
                 Console.WriteLine("Note added successfully.");
             }
 
-            public static List<Notes> GetNotes(string nhsNumber)
+            public static List<Notes> GetPatientNotes(string nhsNumber)
             {
-                // Find the patient by NHS Number
                 var patient = patients.FirstOrDefault(p => p.NHSNumber.Equals(nhsNumber, StringComparison.OrdinalIgnoreCase));
 
-                if (patient != null)
+                if (patient == null)
                 {
-                    return patient.Note;
+                    Console.WriteLine("Patient not found.");
+                    return null; // Or throw a custom exception
                 }
 
-                Console.WriteLine("Patient not found.");
-                return new List<Notes>(); // Return an empty list if the patient is not found
+                return PatientManager.GetPatientNotes(nhsNumber); 
             }
+
         }
 
         public class PatientService
         {
             private readonly Dictionary<string, int> dailyPatientCount = new Dictionary<string, int>(); //2.1 
-
-            var patients = Patient.PatientService.LoadPatient(); 
+            string patient = LoadPatient().ToString();
+            private List<Patient> patients;
 
             public Patient CreatePatient(string firstName, string lastName, DateTime dateOfBirth, string contactDetails, string nhsNumber, string hospitalNumber)
             {
@@ -250,7 +242,8 @@ namespace HospitalManagementSystem
                         HospitalNumber = hospitalNumber
                     };
 
-                    patients.Add(newPatient);
+                    List<Patient> patient = new List<Patient>();
+                    patient.Add(newPatient);
                     SavePatients(patients);
 
                     return newPatient;
@@ -347,19 +340,12 @@ namespace HospitalManagementSystem
                 var patient = patients.FirstOrDefault(p => p.NHSNumber == nhsNumber);
                 if (patient == null)
                 {
-                    throw new ArgumentException("Patient not found.");
+                    throw new Exception("Patient not found.");
                 }
 
                 // Add the note to the patient's notes list
                 patient.Note.Add(newNote);
-
-                // Save the updated patients list back to the file
-                SavePatients(patients);
-
-                Console.WriteLine("Note added successfully.");
             }
-
-
         }
 
         public class Appointment //2.2
@@ -438,6 +424,12 @@ namespace HospitalManagementSystem
             }
 
             return parsedDate;
+        }
+
+        public static List<Notes> AddNoteToPatient(string nhsNumber)
+        {
+            // Logic to add a note to the patient and return updated notes list
+            return new List<Notes>();
         }
 
 
