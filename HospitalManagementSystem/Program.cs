@@ -74,13 +74,13 @@ namespace HospitalManagementSystem
                         break;
 
                     case "2":
-                        
+
                         while (true)
                         {
                             Console.WriteLine("\nSelect an option:");
                             Console.WriteLine("1. View Patient Record");
                             Console.WriteLine("2. Update Patient Basic Details");
-                            Console.WriteLine("3. Add Appointment");
+                            Console.WriteLine("3. Schedule Appointment");
                             Console.WriteLine("4. Cancel Appointment");
                             Console.WriteLine("5. Add Prescription");
                             Console.WriteLine("6. Add Note");

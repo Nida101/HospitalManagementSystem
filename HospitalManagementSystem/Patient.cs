@@ -87,7 +87,7 @@ namespace HospitalManagementSystem
                     Console.WriteLine(new string('-', 30));
                 }
             }
-        
+
 
 
             public static List<Patient> SearchPatientByDobAndName(DateTime dateOfBirth, string fullName)
@@ -209,7 +209,7 @@ namespace HospitalManagementSystem
                     return null; // Or throw a custom exception
                 }
 
-                return PatientManager.GetPatientNotes(nhsNumber); 
+                return PatientManager.GetPatientNotes(nhsNumber);
             }
 
         }
@@ -218,7 +218,7 @@ namespace HospitalManagementSystem
         {
             private readonly Dictionary<string, int> dailyPatientCount = new Dictionary<string, int>(); //2.1 
             string patient = LoadPatient().ToString();
-            private List<Patient> patients;
+            private List<Patient> patients = LoadPatient();
 
             public Patient CreatePatient(string firstName, string lastName, DateTime dateOfBirth, string contactDetails, string nhsNumber, string hospitalNumber)
             {
@@ -242,9 +242,10 @@ namespace HospitalManagementSystem
                         HospitalNumber = hospitalNumber
                     };
 
-                    List<Patient> patient = new List<Patient>();
-                    patient.Add(newPatient);
+                    patients.Add(newPatient);
+                    Console.WriteLine(patients);
                     SavePatients(patients);
+                    Console.WriteLine(patients);
 
                     return newPatient;
                 }
@@ -268,7 +269,7 @@ namespace HospitalManagementSystem
             }
 
             // JSON for 2.1 - storing the patient record
-            private const string FilePath = "patients.json";
+            private static string FilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "patients.json");
 
             // Load existing patients from JSON
             public List<Patient> LoadPatients()
@@ -287,6 +288,12 @@ namespace HospitalManagementSystem
             // Save patients to JSON
             public void SavePatients(List<Patient> patients)
             {
+                if (!File.Exists(FilePath))
+                {
+                    // If the file doesn't exist, create it and return an empty list
+                    Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
+                    File.WriteAllText(FilePath, "[]");
+                }
                 string jsonData = JsonSerializer.Serialize(patients, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(FilePath, jsonData);
             }
@@ -376,7 +383,7 @@ namespace HospitalManagementSystem
             public DateTime DateCreated { get; set; }
             public string Content { get; set; }
         }
-        public List<Notes> note { get; set; } = new List<Notes>();        
+        public List<Notes> note { get; set; } = new List<Notes>();
 
         // Input for 2.3 
         public static string PromptForNHSNumber()
